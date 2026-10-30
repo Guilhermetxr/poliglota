@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { authMessage, logout, resetPassword, signInEmail, signInGoogle, signUpEmail, subscribe } from '../lib/sync.js'
+import { authMessage, logout, refreshVerified, resendVerification, resetPassword, signInEmail, signInGoogle, signUpEmail, subscribe } from '../lib/sync.js'
+import { PASSWORD_MIN, checkEmail, checkLoginPassword, checkNewPassword, normEmail, suggestEmail } from '../lib/validate.js'
+import { Icon } from './ui.jsx'
 
 const STATUS = {
   idle: '',
@@ -64,8 +66,28 @@ function AccountMenu({ s, onClose }) {
       <p className="menu-name">{s.user.name || 'Minha conta'}</p>
       <p className="menu-mail">{s.user.email}</p>
       <p className={`menu-sync ${s.status}`} role="status">{STATUS[s.status]}</p>
+      {!s.user.verified && <VerifyNotice />}
       {err && <p className="form-error" role="alert">{err}</p>}
       <button className="ghost" onClick={out} disabled={busy}>{busy ? 'Saindo…' : 'Sair da conta'}</button>
+    </div>
+  )
+}
+
+function VerifyNotice() {
+  const [msg, setMsg] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const run = async (fn, ok) => {
+    setBusy(true)
+    try { await fn(); setMsg(ok) } catch (e) { setMsg(authMessage(e) || 'Não deu certo agora. Tente de novo em instantes.') } finally { setBusy(false) }
+  }
+  return (
+    <div className="verify">
+      <p>Confirme seu e-mail pelo link que enviamos. Isso protege sua conta.</p>
+      <div className="verify-actions">
+        <button className="link" disabled={busy} onClick={() => run(resendVerification, 'Enviei de novo. Olhe também o spam.')}>Reenviar e-mail</button>
+        <button className="link" disabled={busy} onClick={() => run(refreshVerified, 'Ainda não consta como confirmado.')}>Já confirmei</button>
+      </div>
+      {msg && <p className="hint" role="status">{msg}</p>}
     </div>
   )
 }
@@ -76,6 +98,8 @@ function LoginDialog({ enabled, onClose }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [touched, setTouched] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+  const [show, setShow] = useState(false)
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -88,8 +112,10 @@ function LoginDialog({ enabled, onClose }) {
     return () => d?.removeEventListener('close', close)
   }, [])
 
-  const emailBad = touched.email && !/^\S+@\S+\.\S+$/.test(email) ? 'Digite um e-mail completo, tipo nome@exemplo.com' : null
-  const passBad = mode !== 'reset' && touched.password && password.length < 6 ? 'A senha precisa ter pelo menos 6 caracteres' : null
+  const emailErr = (touched.email || submitted) ? checkEmail(email) : null
+  const passErr = !(touched.password || submitted) || mode === 'reset' ? null
+    : mode === 'signup' ? checkNewPassword(password, email) : checkLoginPassword(password)
+  const typo = !emailErr && mode !== 'reset' ? suggestEmail(email) : null
 
   const run = async (fn) => {
     setBusy(true)
@@ -100,19 +126,31 @@ function LoginDialog({ enabled, onClose }) {
 
   const submit = (e) => {
     e.preventDefault()
-    setTouched({ email: true, password: true })
-    if (!/^\S+@\S+\.\S+$/.test(email)) return
-    if (mode !== 'reset' && password.length < 6) return
+    if (busy) return
+    setSubmitted(true)
+    const eErr = checkEmail(email)
+    const pErr = mode === 'reset' ? null : mode === 'signup' ? checkNewPassword(password, email) : checkLoginPassword(password)
+    if (eErr || pErr) {
+      // leva a pessoa direto pro campo com problema
+      ref.current?.querySelector(eErr ? '#acc-email' : '#acc-pass')?.focus()
+      return
+    }
+    const mail = normEmail(email)
     run(async () => {
-      if (mode === 'login') await signInEmail(email.trim(), password)
-      else if (mode === 'signup') await signUpEmail(email.trim(), password)
-      else { await resetPassword(email.trim()); setInfo('Se esse e-mail tiver conta, o link de redefinição já está a caminho. Olhe também o spam.'); return }
+      if (mode === 'login') await signInEmail(mail, password)
+      else if (mode === 'signup') await signUpEmail(mail, password)
+      else {
+        await resetPassword(mail)
+        // mesma resposta exista a conta ou não: não revela quem tem cadastro
+        setInfo('Se esse e-mail tiver conta, o link de redefinição já está a caminho. Olhe também o spam.')
+        return
+      }
       ref.current?.close()
     })
   }
 
   const google = () => run(async () => { await signInGoogle(); ref.current?.close() })
-  const go = (m) => { setMode(m); setError(null); setInfo(null) }
+  const go = (m) => { setMode(m); setError(null); setInfo(null); setSubmitted(false); setTouched({}); setShow(false) }
   const title = { login: 'Entrar', signup: 'Criar conta', reset: 'Redefinir senha' }[mode]
   const action = { login: 'Entrar', signup: 'Criar conta', reset: 'Enviar link' }[mode]
 
@@ -121,7 +159,7 @@ function LoginDialog({ enabled, onClose }) {
       <div className="dialog-body">
         <header className="dialog-head">
           <h2 id="login-title">{title}</h2>
-          <button className="icon-btn" onClick={() => ref.current?.close()} aria-label="Fechar">✕</button>
+          <button className="icon-btn" onClick={() => ref.current?.close()} aria-label="Fechar"><Icon name="close" /></button>
         </header>
 
         {!enabled ? (
@@ -144,18 +182,28 @@ function LoginDialog({ enabled, onClose }) {
             <form onSubmit={submit} noValidate className="login-form">
               <div className="field">
                 <label htmlFor="acc-email">E-mail</label>
-                <input id="acc-email" type="email" autoComplete="email" inputMode="email" value={email}
+                <input id="acc-email" type="email" name="email" autoComplete="email" inputMode="email" maxLength={254} value={email}
+                  autoCapitalize="none" spellCheck={false}
                   onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                  aria-invalid={!!emailBad} aria-describedby={emailBad ? 'acc-email-err' : undefined} placeholder="nome@exemplo.com" />
-                {emailBad && <p id="acc-email-err" className="field-error">{emailBad}</p>}
+                  aria-invalid={!!emailErr} aria-describedby={emailErr ? 'acc-email-err' : undefined} placeholder="nome@exemplo.com" />
+                {emailErr && <p id="acc-email-err" className="field-error">{emailErr}</p>}
+                {typo && (
+                  <p className="field-hint">Você quis dizer <button type="button" className="link inline" onClick={() => setEmail(typo)}>{typo}</button>?</p>
+                )}
               </div>
               {mode !== 'reset' && (
                 <div className="field">
                   <label htmlFor="acc-pass">Senha</label>
-                  <input id="acc-pass" type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password}
-                    onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                    aria-invalid={!!passBad} aria-describedby={passBad ? 'acc-pass-err' : undefined} />
-                  {passBad && <p id="acc-pass-err" className="field-error">{passBad}</p>}
+                  <div className="pass-wrap">
+                    <input id="acc-pass" type={show ? 'text' : 'password'} name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                      maxLength={128} value={password}
+                      onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      aria-invalid={!!passErr} aria-describedby={passErr ? 'acc-pass-err' : mode === 'signup' ? 'acc-pass-help' : undefined} />
+                    <button type="button" className="icon-btn pass-toggle" onClick={() => setShow(!show)} aria-pressed={show}
+                      aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}><Icon name={show ? 'eyeoff' : 'eye'} /></button>
+                  </div>
+                  {passErr && <p id="acc-pass-err" className="field-error">{passErr}</p>}
+                  {!passErr && mode === 'signup' && <p id="acc-pass-help" className="field-hint">Mínimo de {PASSWORD_MIN} caracteres, misturando letras e números.</p>}
                 </div>
               )}
               {error && <p className="form-error" role="alert">{error}</p>}

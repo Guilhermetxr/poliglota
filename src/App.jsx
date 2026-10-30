@@ -75,7 +75,7 @@ function Home({ onPick }) {
           const prog = Object.keys(MODES).reduce((s, m) => s + stats(l.id, m, itemsFor(l.id, 'geral', maxLevel(l.id, m))).progress, 0) / 3
           return (
             <button key={l.id} className="lang-card" data-lang={l.id} onClick={() => onPick(l.id)}>
-              <span className="lang-code">{l.code}</span>
+              <span className="lang-hello" lang={l.id}>{l.hello}</span>
               <span className="lang-name">{l.name}</span>
               <span className="lang-native" lang={l.id}>{l.native}</span>
               <ProgressBar value={prog} label={`Progresso em ${l.name}`} />
@@ -103,7 +103,7 @@ function LangHub({ lang, mode, setMode, onBack, onStart }) {
     <div className="page">
       <TopBar>
         <button className="icon-btn" onClick={onBack} aria-label="Trocar idioma"><Icon name="back" /></button>
-        <span className="hub-title"><span className="lang-code sm">{L.code}</span> {L.name}</span>
+        <span className="hub-title">{L.name}<span className="hub-hello" lang={lang}>{L.hello}</span></span>
       </TopBar>
 
       <nav className="modes" role="tablist" aria-label="Modo de estudo">
@@ -148,7 +148,7 @@ function LangHub({ lang, mode, setMode, onBack, onStart }) {
             const need = Math.min(...ITEMS[lang].filter((i) => i.cat === c.id).map((i) => i.level))
             return (
               <button key={c.id} className="cat-card locked" disabled aria-label={`${c.name}, libera no nível ${need}`}>
-                <span className="cat-icon" aria-hidden="true">{c.icon}</span>
+                <span className="cat-icon" aria-hidden="true"><Icon name={c.icon} size={22} /></span>
                 <span className="cat-body">
                   <b>{c.name}</b>
                   <small>{c.desc}</small>
@@ -159,7 +159,7 @@ function LangHub({ lang, mode, setMode, onBack, onStart }) {
           }
           return (
             <button key={c.id} className="cat-card" onClick={() => onStart(c.id)}>
-              <span className="cat-icon" aria-hidden="true">{c.icon}</span>
+              <span className="cat-icon" aria-hidden="true"><Icon name={c.icon} size={22} /></span>
               <span className="cat-body">
                 <b>{c.name}</b>
                 <small>{c.desc}</small>
@@ -197,7 +197,7 @@ function LevelStrip({ lang, mode, ml }) {
           const prev = lv.id > 1 ? levelProgress(lang, mode, lv.id - 1) : null
           return (
             <li key={lv.id} className={`level ${open ? 'open' : 'closed'}`}>
-              <span className="level-num" aria-hidden="true">{open ? lv.id : '🔒'}</span>
+              <span className="level-num" aria-hidden="true">{open ? lv.id : <Icon name="lock" size={18} />}</span>
               <div className="level-body">
                 <b>{lv.name}</b>
                 <small>{lv.desc}</small>

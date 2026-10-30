@@ -8,7 +8,7 @@ import { SHARED_3, SLANG_3 } from './level3.js'
 
 export const LANGS = {
   en: {
-    id: 'en', name: 'Inglês', native: 'English', code: 'EN', speech: 'en-US',
+    id: 'en', name: 'Inglês', native: 'English', hello: 'Hello', speech: 'en-US',
     accents: [],
     // [som, dica, quando mostrar (palavra, pronúncia) => bool]
     tips: [
@@ -19,7 +19,7 @@ export const LANGS = {
     ],
   },
   fr: {
-    id: 'fr', name: 'Francês', native: 'Français', code: 'FR', speech: 'fr-FR',
+    id: 'fr', name: 'Francês', native: 'Français', hello: 'Bonjour', speech: 'fr-FR',
     accents: ['é', 'è', 'ê', 'à', 'â', 'ç', 'ô', 'î', 'ù', 'û', 'ë', 'œ'],
     tips: [
       ['rr', 'r arranhado na garganta, como o "r" de "carro" no Rio', (w, p) => /rr/i.test(p)],
@@ -30,7 +30,7 @@ export const LANGS = {
     ],
   },
   es: {
-    id: 'es', name: 'Espanhol', native: 'Español', code: 'ES', speech: 'es-ES',
+    id: 'es', name: 'Espanhol', native: 'Español', hello: 'Hola', speech: 'es-ES',
     accents: ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü', '¿', '¡'],
     tips: [
       ['j / g', 'o "j" é um r aspirado de garganta: "Hijo" = Í-rro', (w) => /j|g[ei]/i.test(w)],
@@ -40,7 +40,7 @@ export const LANGS = {
     ],
   },
   it: {
-    id: 'it', name: 'Italiano', native: 'Italiano', code: 'IT', speech: 'it-IT',
+    id: 'it', name: 'Italiano', native: 'Italiano', hello: 'Ciao', speech: 'it-IT',
     accents: ['à', 'è', 'é', 'ì', 'ò', 'ù'],
     tips: [
       ['letras dobradas', 'segura a consoante: "letto" = LÉT-to, com pausinha', (w) => /([bcdfglmnprstvz])\1/i.test(w)],
@@ -52,17 +52,17 @@ export const LANGS = {
 }
 
 export const CATEGORIES = [
-  { id: 'cumprimentos', name: 'Cumprimentos', icon: '👋', desc: 'Oi, tchau, obrigado e o básico pra começar' },
-  { id: 'casa', name: 'Coisas de casa', icon: '🏠', desc: 'Cômodos, móveis e objetos' },
-  { id: 'comida', name: 'Comida e bebida', icon: '🍝', desc: 'Restaurante, mercado e fome' },
-  { id: 'viagem', name: 'Viagem', icon: '🧳', desc: 'Aeroporto, direções e perguntas úteis' },
-  { id: 'tempo', name: 'Números e tempo', icon: '🕐', desc: 'Contar, dias e horas' },
-  { id: 'familia', name: 'Família e pessoas', icon: '👪', desc: 'Parentes, amigos e carinho' },
-  { id: 'diadia', name: 'Dia a dia', icon: '💬', desc: 'Frases que salvam numa conversa' },
-  { id: 'trabalho', name: 'Trabalho', icon: '💼', desc: 'Reunião, prazo, chefe e e-mail' },
-  { id: 'saude', name: 'Saúde', icon: '🩺', desc: 'Médico, remédio e o que você sente' },
-  { id: 'sentimentos', name: 'Sentimentos', icon: '💛', desc: 'Como você está se sentindo' },
-  { id: 'girias', name: 'Gírias', icon: '🔥', desc: 'Como o povo fala de verdade' },
+  { id: 'cumprimentos', name: 'Cumprimentos', icon: 'chat', desc: 'Oi, tchau, obrigado e o básico pra começar' },
+  { id: 'casa', name: 'Coisas de casa', icon: 'home', desc: 'Cômodos, móveis e objetos' },
+  { id: 'comida', name: 'Comida e bebida', icon: 'food', desc: 'Restaurante, mercado e fome' },
+  { id: 'viagem', name: 'Viagem', icon: 'suitcase', desc: 'Aeroporto, direções e perguntas úteis' },
+  { id: 'tempo', name: 'Números e tempo', icon: 'clock', desc: 'Contar, dias e horas' },
+  { id: 'familia', name: 'Família e pessoas', icon: 'people', desc: 'Parentes, amigos e carinho' },
+  { id: 'diadia', name: 'Dia a dia', icon: 'coffee', desc: 'Frases que salvam numa conversa' },
+  { id: 'trabalho', name: 'Trabalho', icon: 'laptop', desc: 'Reunião, prazo, chefe e e-mail' },
+  { id: 'saude', name: 'Saúde', icon: 'heartplus', desc: 'Médico, remédio e o que você sente' },
+  { id: 'sentimentos', name: 'Sentimentos', icon: 'smile', desc: 'Como você está se sentindo' },
+  { id: 'girias', name: 'Gírias', icon: 'flame', desc: 'Como o povo fala de verdade' },
 ]
 
 // [categoria, id, português, { en: [texto, pronúncia, alternativas?], fr, es, it }]

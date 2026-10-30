@@ -44,6 +44,22 @@ com a versão mais recente, nada se perde) e depois cada mudança é salva sozin
 progresso local é apagado pra outra pessoa no mesmo navegador não herdar. Fica tudo num único
 documento por pessoa (`users/{uid}`), bem abaixo do limite de 1 MB do Firestore.
 
+## Segurança
+
+- **Regras do Firestore** (`firestore.rules`): cada pessoa só lê e grava o próprio documento, só com os
+  campos `v`, `data` e `updatedAt`, tamanho limitado e horário vindo do servidor. Sem apagar direto. Tudo
+  que não está nas regras é negado. **Publique as regras de novo sempre que esse arquivo mudar.**
+- **Cabeçalhos** (`vercel.json`): `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` e `Permissions-Policy`
+  (microfone só neste site).
+- **Cadastro** (`src/lib/validate.js`): e-mail validado e normalizado, sugestão de erro de digitação,
+  senha de 8+ caracteres com letras e números, sem senhas óbvias, e e-mail de confirmação no cadastro.
+- **Dados vindos da nuvem** são tratados como não confiáveis: só entram chaves no formato esperado e
+  números dentro de limites (`mergeRemote` em `src/lib/srs.js`).
+- A chave do Firebase (`VITE_FIREBASE_*`) é pública por natureza. No Google Cloud, em
+  **APIs e serviços > Credenciais**, restrinja a chave aos seus domínios (`*.vercel.app`, `localhost`).
+- No Firebase Authentication, ative **Política de senha** (mínimo 8) e deixe a **proteção contra
+  enumeração de e-mails** ligada.
+
 ## Adicionar conteúdo
 
 Cada nível tem seu arquivo: `src/data/content.js` (nível 1), `level2.js` e `level3.js`.

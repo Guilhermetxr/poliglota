@@ -152,6 +152,30 @@ export function snapshot() {
   return { cards: load(), unlocks: loadUnlocks(), profile: read(SKEY, null) }
 }
 
+// O que vem da nuvem é tratado como entrada não confiável: só chaves no formato esperado e números dentro do limite.
+// (Evita que um documento adulterado ou corrompido quebre o app ou grave chaves estranhas, tipo "__proto__".)
+const CARD_KEY = /^(en|fr|es|it)\|(leitura|escrita|fala)\|[a-z0-9]+\.[a-z0-9]+$/
+const UNLOCK_KEY = /^(en|fr|es|it)\|(leitura|escrita|fala)\|[23]$/
+const num = (v, hi) => (Number.isFinite(v) ? Math.min(hi, Math.max(0, v)) : 0)
+const MAX_TIME = 8.64e15
+
+function cleanCard(c) {
+  if (!c || typeof c !== 'object') return null
+  return {
+    box: Math.round(num(c.box, MAX_BOX)), due: num(c.due, MAX_TIME), last: num(c.last, MAX_TIME),
+    right: Math.round(num(c.right, 1e6)), wrong: Math.round(num(c.wrong, 1e6)), seen: Math.round(num(c.seen, 1e6)),
+  }
+}
+
+function cleanProfile(p) {
+  if (!p || typeof p !== 'object') return null
+  return {
+    xp: Math.round(num(p.xp, 1e9)), streak: Math.round(num(p.streak, 1e5)), todayXp: Math.round(num(p.todayXp, 1e6)),
+    goal: Math.round(num(p.goal, 1e4)) || 50,
+    lastDay: /^\d{4}-\d{2}-\d{2}$/.test(p.lastDay || '') ? p.lastDay : null,
+  }
+}
+
 function newerCard(a, b) {
   if (!a) return b
   if (!b) return a
@@ -165,11 +189,14 @@ function newerCard(a, b) {
 export function mergeRemote(remote) {
   if (!remote) return
   const cards = load()
-  for (const [key, rc] of Object.entries(remote.cards || {})) cards[key] = newerCard(cards[key], rc)
-  Object.assign(loadUnlocks(), remote.unlocks || {})
+  for (const [key, raw] of Object.entries(remote.cards || {})) {
+    const rc = CARD_KEY.test(key) ? cleanCard(raw) : null
+    if (rc) cards[key] = newerCard(cards[key], rc)
+  }
+  for (const [key, v] of Object.entries(remote.unlocks || {})) if (UNLOCK_KEY.test(key) && v === true) loadUnlocks()[key] = true
 
   const l = read(SKEY, null)
-  const r = remote.profile
+  const r = cleanProfile(remote.profile)
   if (r) {
     if (!l) write(SKEY, r)
     else {

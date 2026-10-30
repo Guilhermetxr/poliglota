@@ -77,7 +77,7 @@ export async function initSync() {
   // não perde o que falta enviar se a aba for fechada
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && timer) push() })
   fb.a.onAuthStateChanged(fb.auth, async (u) => {
-    const user = u ? { uid: u.uid, email: u.email, name: u.displayName, photo: u.photoURL } : null
+    const user = u ? { uid: u.uid, email: u.email, name: u.displayName, photo: u.photoURL, verified: u.emailVerified } : null
     set({ user, ready: true, status: user ? 'syncing' : 'idle' })
     if (user) await onSignedIn(user)
     else { stopWatching?.(); stopWatching = null }
@@ -95,7 +95,22 @@ export async function signInEmail(email, password) {
 }
 export async function signUpEmail(email, password) {
   const { a, auth } = await getFirebase()
-  await a.createUserWithEmailAndPassword(auth, email, password)
+  const cred = await a.createUserWithEmailAndPassword(auth, email, password)
+  // confirma que o e-mail é da pessoa; se falhar, a conta já existe e dá pra reenviar depois
+  try { await a.sendEmailVerification(cred.user) } catch (e) { console.warn('[auth] e-mail de confirmação não saiu', e) }
+}
+
+export async function resendVerification() {
+  const { a, auth } = await getFirebase()
+  if (auth.currentUser) await a.sendEmailVerification(auth.currentUser)
+}
+
+// Depois de clicar no link do e-mail, o Firebase só sabe se a gente perguntar de novo
+export async function refreshVerified() {
+  const { a, auth } = await getFirebase()
+  if (!auth.currentUser) return
+  await a.reload(auth.currentUser)
+  set({ user: { ...state.user, verified: auth.currentUser.emailVerified } })
 }
 export async function resetPassword(email) {
   const { a, auth } = await getFirebase()
@@ -129,6 +144,7 @@ export function authMessage(err) {
     'auth/network-request-failed': 'Sem conexão. Confira a internet e tente de novo.',
     'auth/operation-not-allowed': 'Esse tipo de login ainda não foi ativado no Firebase (Authentication > Sign-in method).',
     'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase (Authentication > Settings > Authorized domains).',
+    'auth/weak-password-policy': 'Essa senha não atende às regras de segurança. Use letras, números e pelo menos 8 caracteres.',
     'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Libere pop-ups pra este site e tente de novo.',
   }
   if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null

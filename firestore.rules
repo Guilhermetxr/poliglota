@@ -4,11 +4,19 @@ service cloud.firestore {
     // Cada pessoa só lê e escreve o próprio documento de progresso.
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
+
       allow create, update: if request.auth != null && request.auth.uid == uid
+        // só os 3 campos que o app grava, com o tipo certo
         && request.resource.data.keys().hasOnly(['v', 'data', 'updatedAt'])
+        && request.resource.data.v == 1
         && request.resource.data.data is string
-        && request.resource.data.data.size() < 900000;
+        && request.resource.data.data.size() < 900000
+        // o horário vem do servidor, não do cliente
+        && request.resource.data.updatedAt == request.time;
+
+      // apagar o documento direto não é permitido (o app "apaga" gravando um progresso vazio)
       allow delete: if false;
     }
+    // todo o resto é negado por padrão
   }
 }

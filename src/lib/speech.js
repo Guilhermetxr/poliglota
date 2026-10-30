@@ -15,6 +15,22 @@ function getVoices() {
 
 export const canSpeak = () => 'speechSynthesis' in window
 
+// Áudio automático: toda frase que aparece é falada. Dá pra silenciar (fica salvo).
+const SOUND_KEY = 'idiomas:sound'
+const soundSubs = new Set()
+export function autoSoundOn() {
+  try { return localStorage.getItem(SOUND_KEY) !== 'off' } catch { return true }
+}
+export function setAutoSound(on) {
+  try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off') } catch { /* nada */ }
+  if (!on && canSpeak()) speechSynthesis.cancel()
+  soundSubs.forEach((f) => f(on))
+}
+export function onSoundChange(fn) { soundSubs.add(fn); return () => soundSubs.delete(fn) }
+export function autoSpeak(text, langTag, opts) {
+  if (autoSoundOn()) speak(text, langTag, opts)
+}
+
 export async function speak(text, langTag, { rate = 0.95 } = {}) {
   if (!canSpeak()) return
   const voices = await getVoices()

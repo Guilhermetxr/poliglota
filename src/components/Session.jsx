@@ -4,6 +4,7 @@ import { addXp, buildSession, getCard, review, INTERVALS } from '../lib/srs.js'
 import { maxLevel } from '../lib/levels.js'
 import { makeExercise, MODES } from '../lib/exercises.js'
 import { alignWords } from '../lib/text.js'
+import { autoSoundOn, autoSpeak, onSoundChange, setAutoSound } from '../lib/speech.js'
 import { Choice, Match, TrueFalse } from './ReadExercises.jsx'
 import { Bank, Complete, TypeAnswer } from './WriteExercises.jsx'
 import { Speak } from './SpeakExercise.jsx'
@@ -88,6 +89,7 @@ export function Session({ lang, mode, cat, onExit }) {
       <header className="session-top">
         <button className="icon-btn" onClick={onExit} aria-label="Sair da lição"><Icon name="close" /></button>
         <ProgressBar value={idx / queue.length} label="Progresso da lição" />
+        <SoundToggle />
         <span className="xp-pill">+{xp} XP</span>
       </header>
       <p className="session-meta">
@@ -112,7 +114,20 @@ function when(ms) {
   return `${d} dia${d > 1 ? 's' : ''}`
 }
 
+function SoundToggle() {
+  const [on, setOn] = useState(autoSoundOn)
+  useEffect(() => onSoundChange(setOn), [])
+  return (
+    <button className="icon-btn" onClick={() => setAutoSound(!on)} aria-pressed={on}
+      aria-label={on ? 'Silenciar áudio automático' : 'Ligar áudio automático'} title={on ? 'Áudio automático ligado' : 'Áudio automático desligado'}>
+      <Icon name={on ? 'speaker' : 'mute'} />
+    </button>
+  )
+}
+
 function Feedback({ fb, item, lang, mode, onNext }) {
+  // depois de responder, a frase certa é falada (na fala o aluno já acabou de ouvir e dizer)
+  useEffect(() => { if (mode !== 'fala') autoSpeak(item.text, LANGS[lang].speech) }, [])
   const [praise] = useState(() => PRAISE[Math.floor(Math.random() * PRAISE.length)])
   const showAnswer = !fb.correct || fb.note || mode !== 'fala'
   const status = !fb.correct && fb.typed ? alignWords(item.text, fb.typed).words : undefined
@@ -129,7 +144,7 @@ function Feedback({ fb, item, lang, mode, onNext }) {
               {!fb.correct && fb.typed && <p className="sub">Você: <s lang={lang}>{fb.typed}</s></p>}
             </div>
           )}
-          {item.note && <p className="feedback-note">💡 {item.note}</p>}
+          {item.note && <p className="feedback-note note-tip"><Icon name="bulb" size={16} /> {item.note}</p>}
           <p className="feedback-when">
             {fb.correct ? `Volta em ${when(INTERVALS[fb.card.box])}` : 'Vai aparecer de novo daqui a pouco'}
           </p>
@@ -152,7 +167,7 @@ function Summary({ log, xp, lang, mode, startLevel, onExit }) {
       <p className="eyebrow">{LANGS[lang].name} · {MODES[mode].name}</p>
       <h2>Lição concluída</h2>
       {unlocked > startLevel && (
-        <p className="level-up" role="status">🎉 Você destravou o nível {unlocked}: {LEVELS[unlocked - 1].name}. Tem frases novas esperando.</p>
+        <p className="level-up" role="status"><Icon name="sparkle" size={20} /> Você destravou o nível {unlocked}: {LEVELS[unlocked - 1].name}. Tem frases novas esperando.</p>
       )}
       <div className="summary-stats">
         <div><b>{total ? Math.round((right / total) * 100) : 0}%</b><span>de acerto de primeira</span></div>
