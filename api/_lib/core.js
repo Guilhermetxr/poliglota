@@ -14,14 +14,19 @@ const Body = z.object({
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(MAX_CHARS) })).min(1).max(20),
 }).refine((b) => (b.chat === 'general') === (b.mode === 'duvidas'), { message: 'modo inválido para este chat' })
 
-// Formato que o modelo é obrigado a devolver
+// Formato que o modelo deve devolver. Tolerante de propósito (modelos gratuitos erram detalhes):
+// só "reply" é obrigatório, e uma correção malformada vira null em vez de derrubar a resposta.
+const Correction = z.object({
+  original: z.string().default(''),
+  corrected: z.string().min(1),
+  explanation: z.string().default(''),
+  pron: z.string().default(''),
+})
 export const Out = z.object({
-  reply: z.string(),
-  reply_pt: z.string(),
-  pron: z.string(),
-  correction: z.object({
-    original: z.string(), corrected: z.string(), explanation: z.string(), pron: z.string(),
-  }).nullable(),
+  reply: z.string().min(1),
+  reply_pt: z.string().default(''),
+  pron: z.string().default(''),
+  correction: Correction.nullish().catch(null).transform((v) => v ?? null),
 })
 
 const fail = (status, code, message, extra = {}) =>

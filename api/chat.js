@@ -1,7 +1,7 @@
 // POST /api/chat  (função da Vercel)
 // Variáveis de ambiente no servidor:
-//   ANTHROPIC_API_KEY   (obrigatória)  chave da API da Anthropic. Nunca vai pro navegador.
-//   CHAT_MODEL          (opcional)     modelo. Padrão: claude-opus-5-5
+//   AI_API_KEY          (obrigatória)  chave do serviço de IA. Nunca vai pro navegador.
+//   AI_BASE_URL / AI_MODEL / AI_JSON_MODE  (opcionais, ver _lib/ai.js). Padrão: Groq + llama-3.3-70b-versatile
 //   CHAT_DAILY_LIMIT    (opcional)     mensagens por pessoa por dia. Padrão: 40
 //   FIREBASE_PROJECT_ID (opcional)     usa VITE_FIREBASE_PROJECT_ID se faltar
 import { createRemoteJWKSet, jwtVerify } from 'jose'
@@ -32,7 +32,7 @@ const handler = createHandler({
 })
 
 export async function POST(request) {
-  if (!env('ANTHROPIC_API_KEY')) {
+  if (!env('AI_API_KEY')) {
     return Response.json({ error: { code: 'nao_configurado', message: 'O chat ainda não foi configurado.' } }, { status: 503 })
   }
   return handler(request)

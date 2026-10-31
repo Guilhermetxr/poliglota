@@ -51,18 +51,23 @@ Um **Tutor geral** (dúvidas em português sobre os 4 idiomas) e um **tutor por 
 vem com tradução, pronúncia e, quando há erro, um cartão de correção explicado em português.
 
 Como funciona: o navegador chama `/api/chat` (função da Vercel em `api/chat.js`). Só ela conhece a
-chave da Anthropic. Ela confere o login do Firebase, exige **e-mail confirmado**, aplica o limite diário
+chave da IA. Ela confere o login do Firebase, exige **e-mail confirmado**, aplica o limite diário
 e só então chama a IA.
 
-Pra ligar:
-1. Crie uma chave em [console.anthropic.com](https://console.anthropic.com) e **defina um limite de gasto mensal** lá.
-2. Na Vercel (**Settings > Environment Variables**) cadastre `ANTHROPIC_API_KEY`. Opcionais: `CHAT_MODEL`, `CHAT_DAILY_LIMIT`.
-3. Publique de novo o `firestore.rules` (ganhou a regra do contador de uso) e faça o redeploy.
-4. Local: ponha `ANTHROPIC_API_KEY` no `.env.local` e rode `npm run dev` (o Vite serve o `/api/chat`).
+**Usa IA gratuita.** O servidor fala o formato "OpenAI-compatível" (`api/_lib/ai.js`), então serve
+Groq (padrão), Gemini, OpenRouter e outros. Trocar de serviço é só mudar 3 variáveis, sem mexer no código.
 
-Custo (estimativa grosseira, ~1.300 tokens de entrada e ~600 de saída por mensagem): com `claude-opus-5-5`
-(padrão) cerca de US$ 0,017 por mensagem; com `claude-haiku-5-5`, cerca de US$ 0,0004. Com o limite de 40
-mensagens/dia, o pior caso por pessoa fica em ~US$ 0,68/dia no Opus e ~US$ 0,02/dia no Haiku.
+Pra ligar:
+1. Crie uma chave grátis em [console.groq.com](https://console.groq.com) (ou no serviço que preferir).
+2. Na Vercel (**Settings > Environment Variables**) cadastre `AI_API_KEY`. Opcionais: `AI_BASE_URL`, `AI_MODEL`, `CHAT_DAILY_LIMIT`.
+3. Publique de novo o `firestore.rules` (ganhou a regra do contador de uso) e faça o redeploy.
+4. Local: ponha `AI_API_KEY` no `.env.local` e rode `npm run dev` (o Vite serve o `/api/chat`).
+
+Limites dos planos gratuitos: o limite do serviço é **de todo o site somado**, não por pessoa. Se muita gente
+usar ao mesmo tempo, o serviço responde "muitas requisições" e o chat mostra "o tutor está muito requisitado".
+Se isso acontecer, baixe `CHAT_DAILY_LIMIT` ou use um plano pago. Confira os números atuais no painel do
+serviço. Atenção à privacidade: alguns planos gratuitos (como o do Gemini) podem usar o conteúdo das
+conversas pra melhorar os modelos. Leia os termos do serviço que escolher.
 
 ## Segurança
 
@@ -80,7 +85,7 @@ mensagens/dia, o pior caso por pessoa fica em ~US$ 0,68/dia no Opus e ~US$ 0,02/
   fechadas pra idioma/modo/cenário (o navegador nunca envia o prompt) e **não chama a IA se o contador
   falhar**. O contador é gravado com o token da própria pessoa e as regras só deixam subir de 1 em 1.
   Limitação: um limite por pessoa não impede alguém de criar várias contas, por isso o e-mail precisa ser
-  confirmado e vale configurar o limite de gasto no console da Anthropic.
+  confirmado (e, no plano gratuito, o pior caso é esgotar a cota do serviço, não gerar cobrança).
 - A chave do Firebase (`VITE_FIREBASE_*`) é pública por natureza. No Google Cloud, em
   **APIs e serviços > Credenciais**, restrinja a chave aos seus domínios (`*.vercel.app`, `localhost`).
 - No Firebase Authentication, ative **Política de senha** (mínimo 8) e deixe a **proteção contra

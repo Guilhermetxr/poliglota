@@ -2,7 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // Em desenvolvimento, serve a função /api/chat (na Vercel ela roda como função de servidor).
-// As variáveis (ANTHROPIC_API_KEY etc.) vêm do .env.local.
+// As variáveis (AI_API_KEY etc.) vêm do .env.local.
 function apiDev(mode) {
   return {
     name: 'api-dev',
