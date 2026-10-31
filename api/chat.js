@@ -1,7 +1,7 @@
 // POST /api/chat  (função da Vercel)
 // Variáveis de ambiente no servidor:
 //   AI_API_KEY          (obrigatória)  chave do serviço de IA. Nunca vai pro navegador.
-//   AI_BASE_URL / AI_MODEL / AI_JSON_MODE  (opcionais, ver _lib/ai.js). Padrão: Groq + llama-3.3-70b-versatile
+//   AI_BASE_URL / AI_MODEL / AI_JSON_MODE  (opcionais, ver _lib/ai.js). Padrão: Groq + openai/gpt-oss-120b
 //   CHAT_DAILY_LIMIT    (opcional)     mensagens por pessoa por dia. Padrão: 40
 //   FIREBASE_PROJECT_ID (opcional)     usa VITE_FIREBASE_PROJECT_ID se faltar
 import { createRemoteJWKSet, jwtVerify } from 'jose'

@@ -2,12 +2,12 @@
 // Variáveis de ambiente (só no servidor):
 //   AI_API_KEY    chave do serviço (obrigatória)
 //   AI_BASE_URL   padrão https://api.groq.com/openai/v1
-//   AI_MODEL      padrão llama-3.3-70b-versatile
+//   AI_MODEL      padrão openai/gpt-oss-120b (os serviços gratuitos trocam de modelo; se der 404, veja /models)
 //   AI_JSON_MODE  "off" desliga o response_format (se o serviço rejeitar)
 import { Out } from './core.js'
 
 const DEFAULT_BASE = 'https://api.groq.com/openai/v1'
-const DEFAULT_MODEL = 'llama-3.3-70b-versatile'
+const DEFAULT_MODEL = 'openai/gpt-oss-120b'
 
 // Serviços gratuitos nem sempre garantem JSON válido, então o formato vai no prompt e é validado aqui
 const FORMAT = `
@@ -26,10 +26,14 @@ function extractJson(text) {
 // Erros de rede/HTTP lançam (com .status). JSON inválido tenta mais uma vez, porque modelos gratuitos falham de vez em quando.
 export async function ask({ system, messages }, { fetch: f = globalThis.fetch, env = process.env } = {}) {
   const base = (env.AI_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '')
+  const model = env.AI_MODEL || DEFAULT_MODEL
+  // modelos que "raciocinam" antes de responder (gpt-oss) gastam tokens pensando: limite maior e esforço baixo
+  const effort = env.AI_REASONING_EFFORT || (/gpt-oss/i.test(model) ? 'low' : '')
   const body = {
-    model: env.AI_MODEL || DEFAULT_MODEL,
+    model,
     temperature: 0.4,
-    max_tokens: 900,
+    max_tokens: 3000,
+    ...(effort ? { reasoning_effort: effort } : {}),
     messages: [{ role: 'system', content: system + FORMAT }, ...messages],
     ...(env.AI_JSON_MODE === 'off' ? {} : { response_format: { type: 'json_object' } }),
   }
