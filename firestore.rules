@@ -17,6 +17,25 @@ service cloud.firestore {
       // apagar o documento direto não é permitido (o app "apaga" gravando um progresso vazio)
       allow delete: if false;
     }
+    // Contador diário do chat. O servidor grava este documento com o token da própria pessoa,
+    // e as regras só deixam o número subir de 1 em 1 e nunca descer: ninguém consegue zerar o próprio uso.
+    // O id é "<uid>_<AAAA-MM-DD>".
+    match /usage/{docId} {
+      allow read: if request.auth != null
+        && docId.matches(request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}');
+
+      allow create: if request.auth != null
+        && docId.matches(request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1;
+
+      allow update: if request.auth != null
+        && docId.matches(request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == resource.data.count + 1;
+
+      allow delete: if false;
+    }
     // todo o resto é negado por padrão
   }
 }

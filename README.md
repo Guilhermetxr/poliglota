@@ -44,6 +44,26 @@ com a versão mais recente, nada se perde) e depois cada mudança é salva sozin
 progresso local é apagado pra outra pessoa no mesmo navegador não herdar. Fica tudo num único
 documento por pessoa (`users/{uid}`), bem abaixo do limite de 1 MB do Firestore.
 
+## Chat com tutor (IA)
+
+Um **Tutor geral** (dúvidas em português sobre os 4 idiomas) e um **tutor por idioma** com os modos
+*Conversar* (cenários como restaurante e aeroporto, no seu nível) e *Corrigir meu texto*. Cada resposta
+vem com tradução, pronúncia e, quando há erro, um cartão de correção explicado em português.
+
+Como funciona: o navegador chama `/api/chat` (função da Vercel em `api/chat.js`). Só ela conhece a
+chave da Anthropic. Ela confere o login do Firebase, exige **e-mail confirmado**, aplica o limite diário
+e só então chama a IA.
+
+Pra ligar:
+1. Crie uma chave em [console.anthropic.com](https://console.anthropic.com) e **defina um limite de gasto mensal** lá.
+2. Na Vercel (**Settings > Environment Variables**) cadastre `ANTHROPIC_API_KEY`. Opcionais: `CHAT_MODEL`, `CHAT_DAILY_LIMIT`.
+3. Publique de novo o `firestore.rules` (ganhou a regra do contador de uso) e faça o redeploy.
+4. Local: ponha `ANTHROPIC_API_KEY` no `.env.local` e rode `npm run dev` (o Vite serve o `/api/chat`).
+
+Custo (estimativa grosseira, ~1.300 tokens de entrada e ~600 de saída por mensagem): com `claude-opus-5-5`
+(padrão) cerca de US$ 0,017 por mensagem; com `claude-haiku-5-5`, cerca de US$ 0,0004. Com o limite de 40
+mensagens/dia, o pior caso por pessoa fica em ~US$ 0,68/dia no Opus e ~US$ 0,02/dia no Haiku.
+
 ## Segurança
 
 - **Regras do Firestore** (`firestore.rules`): cada pessoa só lê e grava o próprio documento, só com os
@@ -55,6 +75,12 @@ documento por pessoa (`users/{uid}`), bem abaixo do limite de 1 MB do Firestore.
   senha de 8+ caracteres com letras e números, sem senhas óbvias, e e-mail de confirmação no cadastro.
 - **Dados vindos da nuvem** são tratados como não confiáveis: só entram chaves no formato esperado e
   números dentro de limites (`mergeRemote` em `src/lib/srs.js`).
+- **Chat**: o servidor valida o token do Firebase contra as chaves públicas do Google (rejeita token
+  forjado e `alg: none`), exige e-mail confirmado, limita tamanho/quantidade de mensagens, usa listas
+  fechadas pra idioma/modo/cenário (o navegador nunca envia o prompt) e **não chama a IA se o contador
+  falhar**. O contador é gravado com o token da própria pessoa e as regras só deixam subir de 1 em 1.
+  Limitação: um limite por pessoa não impede alguém de criar várias contas, por isso o e-mail precisa ser
+  confirmado e vale configurar o limite de gasto no console da Anthropic.
 - A chave do Firebase (`VITE_FIREBASE_*`) é pública por natureza. No Google Cloud, em
   **APIs e serviços > Credenciais**, restrinja a chave aos seus domínios (`*.vercel.app`, `localhost`).
 - No Firebase Authentication, ative **Política de senha** (mínimo 8) e deixe a **proteção contra

@@ -127,6 +127,17 @@ export async function logout() {
 }
 
 export const flush = push
+
+// Token de login que o servidor confere em /api/chat (renovado sozinho pelo Firebase quando vence)
+export async function getIdToken() {
+  if (import.meta.env.DEV && window.__syncDebug?.token) return window.__syncDebug.token // teste local
+  if (!firebaseEnabled || !state.user) return null
+  const { auth } = await getFirebase()
+  return auth.currentUser ? auth.currentUser.getIdToken() : null
+}
+
+// só em desenvolvimento: deixa o teste simular o estado de login sem conta real
+if (import.meta.env.DEV) window.__syncDebug = { set }
 export { hasProgress }
 
 // Tradução dos erros do Firebase Auth pra algo que a pessoa entende e pode resolver

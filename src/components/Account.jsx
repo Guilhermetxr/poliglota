@@ -15,6 +15,12 @@ export function Account() {
   const [open, setOpen] = useState(false)
   const [menu, setMenu] = useState(false)
   useEffect(() => subscribe(setS), [])
+  // outras telas (ex.: o chat) pedem pra abrir o login
+  useEffect(() => {
+    const h = () => setOpen(true)
+    window.addEventListener('open-login', h)
+    return () => window.removeEventListener('open-login', h)
+  }, [])
 
   // Em produção sem Firebase configurado o botão some. No dev aparece pra mostrar como configurar.
   if (!s.enabled && !import.meta.env.DEV) return null

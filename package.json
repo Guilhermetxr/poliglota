@@ -10,9 +10,12 @@
     "check-data": "node scripts/check-data.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "firebase": "^13.1.0",
+    "jose": "^6.2.14",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.3",

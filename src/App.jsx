@@ -5,6 +5,7 @@ import { levelProgress, maxLevel, unlockNow } from './lib/levels.js'
 import { flush, initSync } from './lib/sync.js'
 import { MODES } from './lib/exercises.js'
 import { Session } from './components/Session.jsx'
+import { Chat } from './components/Chat.jsx'
 import { Account } from './components/Account.jsx'
 import { Icon, ProgressBar } from './components/ui.jsx'
 
@@ -19,6 +20,7 @@ export default function App() {
   const [lang, setLang] = useState(() => load('idiomas:lang', null))
   const [mode, setMode] = useState(() => load('idiomas:mode', 'leitura'))
   const [session, setSession] = useState(null) // categoria em estudo
+  const [chat, setChat] = useState(null) // 'general' ou o id de um idioma
   const [, refresh] = useState(0)
 
   // login (se o Firebase estiver configurado) + atualiza a tela quando o progresso muda,
@@ -33,12 +35,14 @@ export default function App() {
 
   return (
     <div className="app" data-lang={lang || 'none'}>
-      {session ? (
+      {chat ? (
+        <Chat key={chat} chat={chat} onExit={() => setChat(null)} />
+      ) : session ? (
         <Session lang={lang} mode={mode} cat={session} onExit={() => { setSession(null); refresh((x) => x + 1) }} />
       ) : lang ? (
-        <LangHub lang={lang} mode={mode} setMode={chooseMode} onBack={() => chooseLang(null)} onStart={setSession} />
+        <LangHub lang={lang} mode={mode} setMode={chooseMode} onBack={() => chooseLang(null)} onStart={setSession} onChat={setChat} />
       ) : (
-        <Home onPick={chooseLang} />
+        <Home onPick={chooseLang} onChat={setChat} />
       )}
     </div>
   )
@@ -61,7 +65,7 @@ function TopBar({ children }) {
   )
 }
 
-function Home({ onPick }) {
+function Home({ onPick, onChat }) {
   const p = getProfile()
   return (
     <div className="page">
@@ -84,6 +88,13 @@ function Home({ onPick }) {
           )
         })}
       </div>
+      <button className="tutor-card" onClick={() => onChat('general')}>
+        <Icon name="chat" size={22} />
+        <span>
+          <b>Tutor geral</b>
+          <small>Tire dúvidas sobre qualquer um dos idiomas, em português</small>
+        </span>
+      </button>
       <footer className="foot">
         <span>{p.xp} XP no total</span>
         <button className="link" onClick={async () => {
@@ -94,7 +105,7 @@ function Home({ onPick }) {
   )
 }
 
-function LangHub({ lang, mode, setMode, onBack, onStart }) {
+function LangHub({ lang, mode, setMode, onBack, onStart, onChat }) {
   const L = LANGS[lang]
   const ml = maxLevel(lang, mode)
   const all = itemsFor(lang, 'geral', ml)
@@ -136,6 +147,14 @@ function LangHub({ lang, mode, setMode, onBack, onStart }) {
           </span>
         </button>
       </div>
+
+      <button className="tutor-card in-hub" onClick={() => onChat(lang)}>
+        <Icon name="chat" size={22} />
+        <span>
+          <b>Conversar com o tutor de {L.name.toLowerCase()}</b>
+          <small>Converse, tire dúvidas e receba correções com explicação</small>
+        </span>
+      </button>
 
       <LevelStrip lang={lang} mode={mode} ml={ml} />
 

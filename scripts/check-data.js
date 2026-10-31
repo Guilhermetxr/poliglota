@@ -15,5 +15,5 @@ for (const [lang, items] of Object.entries(ITEMS)) {
   const byLevel = [1,2,3].map((n) => items.filter((i) => i.level === n).length).join(' / ')
   console.log(`${lang}: ${items.length} itens (níveis ${byLevel})`)
 }
-if (bad) { console.log(`\n${bad} problema(s)`); process.exit(1) }
+if (bad) { console.log(`\n${bad} problema(s)`); process.exit(1) }f
 console.log('\nTudo certo.')
