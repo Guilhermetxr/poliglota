@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { LANGS } from '../data/content.js'
 import { speak } from '../lib/speech.js'
 import { displayWords } from '../lib/text.js'
@@ -22,6 +23,7 @@ const PATHS = {
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z',
   eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
   eyeoff: 'M4 4l16 16M9.9 6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.8M6.1 7.7A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9.5 9.5 0 0 0 4.2-1',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
   // categorias
   chat: 'M4 5h16v10H9l-5 4zM8 9h8M8 12h5',
   home: 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6',
@@ -111,4 +113,22 @@ export function ProgressBar({ value, label }) {
       <span style={{ transform: `scaleX(${Math.max(0, Math.min(1, value))})` }} />
     </div>
   )
+}
+
+// Número que sobe até o valor final (sem animação se a pessoa pediu menos movimento)
+export function CountUp({ to, prefix = '', suffix = '', ms = 800 }) {
+  const [v, setV] = useState(0)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !to) { setV(to); return }
+    let raf
+    const t0 = performance.now()
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / ms)
+      setV(Math.round(to * (1 - Math.pow(1 - k, 3)))) // desacelera no fim
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [to, ms])
+  return <>{prefix}{v}{suffix}</>
 }

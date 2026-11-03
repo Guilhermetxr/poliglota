@@ -8,7 +8,7 @@ import { autoSoundOn, autoSpeak, onSoundChange, setAutoSound } from '../lib/spee
 import { Choice, Match, TrueFalse } from './ReadExercises.jsx'
 import { Bank, Complete, TypeAnswer } from './WriteExercises.jsx'
 import { Speak } from './SpeakExercise.jsx'
-import { Icon, PronLine, ProgressBar, SpeakButtons } from './ui.jsx'
+import { CountUp, Icon, PronLine, ProgressBar, SpeakButtons } from './ui.jsx'
 
 const COMPONENTS = {
   choice: Choice, reverse: Choice, truefalse: TrueFalse, match: Match,
@@ -90,7 +90,10 @@ export function Session({ lang, mode, cat, onExit }) {
         <button className="icon-btn" onClick={onExit} aria-label="Sair da lição"><Icon name="close" /></button>
         <ProgressBar value={idx / queue.length} label="Progresso da lição" />
         <SoundToggle />
-        <span className="xp-pill">+{xp} XP</span>
+        <span className="xp-wrap">
+          <span className="xp-pill" key={xp}>+{xp} XP</span>
+          {xp > 0 && <span className="xp-float" key={`f${xp}`} aria-hidden="true">+10</span>}
+        </span>
       </header>
       <p className="session-meta">
         {LANGS[lang].name} · {MODES[mode].name} · {catName}
@@ -135,7 +138,10 @@ function Feedback({ fb, item, lang, mode, onNext }) {
     <div className={`feedback ${fb.correct ? 'good' : 'bad'}`} role="status">
       <div className="feedback-inner">
         <div className="feedback-text">
-          <p className="feedback-title">{fb.correct ? praise : mode === 'fala' ? 'Quase lá' : 'Resposta certa:'}</p>
+          <p className="feedback-title">
+            <span className="fb-icon" aria-hidden="true"><Icon name={fb.correct ? 'check' : 'close'} size={18} /></span>
+            {fb.correct ? praise : mode === 'fala' ? 'Quase lá' : 'Resposta certa:'}
+          </p>
           {fb.note && <p className="feedback-note">{fb.note}</p>}
           {showAnswer && mode !== 'fala' && (
             <div className="feedback-answer">
@@ -164,15 +170,15 @@ function Summary({ log, xp, lang, mode, startLevel, onExit }) {
   const missed = [...new Map(log.filter((l) => !l.correct).map((l) => [l.item.id, l.item])).values()]
   return (
     <div className="session summary">
-      <p className="eyebrow">{LANGS[lang].name} · {MODES[mode].name}</p>
       <h2>Lição concluída</h2>
+      <p className="sub">{LANGS[lang].name} &middot; {MODES[mode].name}</p>
       {unlocked > startLevel && (
         <p className="level-up" role="status"><Icon name="sparkle" size={20} /> Você destravou o nível {unlocked}: {LEVELS[unlocked - 1].name}. Tem frases novas esperando.</p>
       )}
       <div className="summary-stats">
-        <div><b>{total ? Math.round((right / total) * 100) : 0}%</b><span>de acerto de primeira</span></div>
-        <div><b>+{xp}</b><span>XP</span></div>
-        <div><b>{missed.length}</b><span>pra reforçar</span></div>
+        <div style={{ '--i': 0 }}><b><CountUp to={total ? Math.round((right / total) * 100) : 0} suffix="%" /></b><span>de acerto de primeira</span></div>
+        <div style={{ '--i': 1 }}><b><CountUp to={xp} prefix="+" /></b><span>XP</span></div>
+        <div style={{ '--i': 2 }}><b><CountUp to={missed.length} /></b><span>pra reforçar</span></div>
       </div>
       {missed.length > 0 && (
         <section className="missed">

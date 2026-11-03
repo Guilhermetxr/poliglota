@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LANGS } from '../data/content.js'
 import { autoSpeak } from '../lib/speech.js'
-import { SpeakButtons } from './ui.jsx'
+import { Icon, SpeakButtons } from './ui.jsx'
 
 // Escolher uma opção e depois confirmar. Evita acertar/errar por toque sem querer
 // e dá tempo de mudar de ideia.
@@ -63,7 +63,9 @@ export function Choice({ item, ex, lang, locked, onAnswer }) {
           return (
             <button key={opt} role="radio" aria-checked={opt === sel} className={`option ${cls}`}
               onClick={() => setSel(opt)} disabled={locked} lang={reverse ? lang : undefined}>
-              <kbd>{i + 1}</kbd>{opt}
+              <kbd>{i + 1}</kbd><span className="opt-text">{opt}</span>
+              {cls === 'right' && <Icon name="check" size={20} className="opt-mark" />}
+              {cls === 'wrong' && <Icon name="close" size={20} className="opt-mark" />}
             </button>
           )
         })}
@@ -85,7 +87,9 @@ export function TrueFalse({ item, ex, lang, locked, onAnswer }) {
     else if (!locked && v === sel) cls = 'selected'
     return (
       <button role="radio" aria-checked={sel === v} className={`option ${cls}`} onClick={() => setSel(v)} disabled={locked}>
-        <kbd>{n}</kbd>{label}
+        <kbd>{n}</kbd><span className="opt-text">{label}</span>
+        {cls === 'right' && <Icon name="check" size={20} className="opt-mark" />}
+        {cls === 'wrong' && <Icon name="close" size={20} className="opt-mark" />}
       </button>
     )
   }
